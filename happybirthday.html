@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🇪🇸 西班牙像素之旅</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=VT323&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --spain-red: #AA151B;
+            --spain-yellow: #F1BF00;
+            --ocean-blue: #0067A5;
+            --pixel-bg: #FFEFD5;
+            --text-color: #2c2c2c;
+            --border-color: #4a4a4a;
+            --shadow-color: rgba(0,0,0,0.2);
+            
+            /* 地图颜色调色板 */
+            --map-water: #4B9CD3;
+            --map-land: #E5D5B5;
+            --map-grass: #7C9A6B;
+            --map-road: #C0A080;
+            --map-dark: #8B4513;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'VT323', 'DotGothic16', monospace, sans-serif;
+            background-color: var(--ocean-blue);
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle, transparent 20%, var(--ocean-blue) 20%, var(--ocean-blue) 80%, transparent 80%, transparent),
+                radial-gradient(circle, transparent 20%, var(--ocean-blue) 20%, var(--ocean-blue) 80%, transparent 80%, transparent);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+
+        .header {
+            height: 60px;
+            background: var(--spain-red);
+            border-bottom: 4px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 4px 0 var(--shadow-color);
+        }
+
+        .header h1 {
+            color: #fff;
+            font-size: 24px;
+            margin: 0;
+            text-shadow: 2px 2px 0 #000;
+            letter-spacing: 1px;
+            font-family: 'VT323', 'DotGothic16', monospace;
+            font-weight: normal;
+        }
+
+        #back-btn {
+            position: absolute;
+            left: 10px;
+            background: #fff;
+            border: 2px solid #000;
+            padding: 5px 10px;
+            font-family: 'VT323', 'DotGothic16', monospace;
+            font-size: 18px;
+            cursor: pointer;
+            display: none;
+            box-shadow: 2px 2px 0 #000;
+        }
+
+        #back-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: none;
+        }
+
+        /* --- 地图区域 --- */
+        #map-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-color: var(--map-water); /* 默认底色 */
+            margin: 10px;
+            border: 4px solid var(--border-color);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+
+        /* 背景地图 Canvas */
+        #map-bg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            image-rendering: pixelated; /* 像素风核心 */
+            opacity: 1; 
+        }
+
+        .map-layer {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: opacity 0.5s ease;
+            z-index: 1; /* 确保图标在 Canvas 之上 */
+        }
+
+        .hidden {
+            display: none !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .marker {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 5;
+            animation: float 2s infinite ease-in-out;
+        }
+
+        .marker-icon {
+            font-size: 32px;
+            filter: drop-shadow(3px 3px 0 rgba(0,0,0,0.3));
+            transition: transform 0.2s;
+        }
+
+        .marker.locked .marker-icon {
+            filter: grayscale(100%) drop-shadow(2px 2px 0 rgba(0,0,0,0.2));
+            opacity: 0.7;
+        }
+
+        .marker-label {
+            background: #fff;
+            border: 2px solid #000;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-top: 2px;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+            white-space: nowrap;
+            font-family: 'VT323', 'DotGothic16', monospace;
+        }
+
+        .marker:active .marker-icon {
+            transform: scale(0.9);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(-50%, -100%); }
+            50% { transform: translate(-50%, -110%); }
+        }
+
+        #toast {
+            position: fixed;
+            top: 15%;
+            left: 50%;
+            background: #333;
+            color: #fff;
+            padding: 10px 20px;
+            border: 2px solid #fff;
+            border-radius: 4px;
+            font-size: 16px;
+            z-index: 100;
+            box-shadow: 4px 4px 0 #000;
+            display: none;
+            text-align: center;
+            width: auto;
+            max-width: 80%;
+            pointer-events: none;
+        }
+
+        @keyframes toastFadeIn {
+            from { opacity: 0; transform: translate(-50%, -20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 50;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-content {
+            background: #fff;
+            width: 90%;
+            max-width: 500px;
+            border: 4px solid #000;
+            padding: 0;
+            position: relative;
+            box-shadow: 8px 8px 0 rgba(0,0,0,0.5);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+
+        .modal-header {
+            background: var(--spain-yellow);
+            padding: 10px;
+            border-bottom: 4px solid #000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .modal-title {
+            font-weight: normal;
+            font-size: 22px;
+            color: #000;
+            font-family: 'VT323', 'DotGothic16', monospace;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+        }
+
+        .close-btn {
+            background: var(--spain-red);
+            color: #fff;
+            border: 2px solid #000;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 2px 2px 0 #000;
+        }
+
+        .modal-body {
+            padding: 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+            flex: 1;
+        }
+
+        .modal-img-placeholder {
+            flex: 1;
+            min-height: 150px;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            border: 2px solid #000;
+            display: block;
+            margin: 0 auto 5px auto;
+            background-color: #eee;
+            background-image: linear-gradient(
+                45deg, #eee 25%, #ddd 25%, #ddd 50%, #eee 50%, #eee 75%, #ddd 75%, #ddd 100%
+            );
+            background-size: 20px 20px;
+            animation: pixel-loading 1s linear infinite;
+        }
+
+        @keyframes pixel-loading {
+            0% { background-position: 0 0; }
+            100% { background-position: 20px 0; }
+        }
+
+        .modal-text {
+            font-size: 16px;
+            line-height: 1.3;
+            color: #333;
+            flex-shrink: 0;
+            margin: 0;
+            padding-top: 5px;
+            font-family: 'DotGothic16', monospace; 
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 60;
+        }
+
+        .footer-deco {
+            height: 20px;
+            background: repeating-linear-gradient(
+                45deg,
+                var(--spain-red),
+                var(--spain-red) 10px,
+                var(--spain-yellow) 10px,
+                var(--spain-yellow) 20px
+            );
+            border-top: 4px solid #000;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <header class="header">
+            <button id="back-btn">◀ BACK</button>
+            <h1>SPAIN TRIP 🇪🇸</h1>
+        </header>
+
+        <div id="map-container">
+            <!-- 提升 Canvas 分辨率到 128x128，让像素更细腻 -->
+            <canvas id="map-bg-canvas" width="128" height="128"></canvas>
+
+            <!-- 国家层：西班牙全图 -->
+            <div id="country-view" class="map-layer">
+                <div style="position:absolute; top:10px; right:10px; font-size:14px; opacity:0.8; background: rgba(255,255,255,0.7); padding: 2px 5px; border-radius: 4px;">MAP: SPAIN</div>
+            </div>
+
+            <!-- 城市层：具体城市地图 -->
+            <div id="city-view" class="map-layer hidden">
+                <div id="city-name-display" style="position:absolute; top:10px; right:10px; font-size:14px; opacity:0.8; background: rgba(255,255,255,0.7); padding: 2px 5px; border-radius: 4px;"></div>
+            </div>
+        </div>
+
+        <div class="footer-deco"></div>
+    </div>
+
+    <div id="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title" id="modal-title-text">Location Unlocked!</span>
+                <div class="close-btn" onclick="closeModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <img src="" alt="Scenery" class="modal-img-placeholder" id="modal-image">
+                <p class="modal-text" id="modal-message"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">Message here</div>
+    <canvas id="confetti-canvas"></canvas>
+
+    <script>
+        const GAME_DATA = {
+            madrid: {
+                id: 'madrid',
+                name: 'Madrid',
+                icon: '🏰',
+                x: 50, y: 45, 
+                landmarks: [
+                    {
+                        id: 'sol',
+                        name: 'Puerta del Sol',
+                        icon: '🐻', 
+                        x: 50, y: 50,
+                        unlockDate: "2023-10-01T00:00:00", 
+                        image: "https://s2.imgbb.ws/file/storage-sv2/XGAYO.jpg", 
+                        message: "生日快乐！就像马德里的中心，你也是我心中的C位！愿你永远闪闪发光✨"
+                    },
+                    {
+                        id: 'prado',
+                        name: 'Prado Museum',
+                        icon: '🎨',
+                        x: 70, y: 60,
+                        unlockDate: "2025-12-20T09:00:00", 
+                        image: "https://images.unsplash.com/photo-1558642452-9d2a7deb7f62",
+                        message: "这幅画叫《最好的闺蜜》，是非卖品哦！🎨"
+                    }
+                ]
+            },
+            sevilla: {
+                id: 'sevilla',
+                name: 'Sevilla',
+                icon: '💃',
+                x: 35, y: 75,
+                landmarks: [
+                    {
+                        id: 'plaza',
+                        name: 'Plaza de España',
+                        icon: '⛲',
+                        x: 50, y: 50,
+                        unlockDate: "2023-01-01T00:00:00",
+                        image: "https://images.unsplash.com/photo-1559313162-0758436df85d?q=80&w=800",
+                        message: "塞维利亚的阳光都不如你灿烂！愿你的每一天都像弗拉明戈一样热情似火！💃"
+                    }
+                ]
+            },
+            barcelona: {
+                id: 'barcelona',
+                name: 'Barcelona',
+                icon: '🦎',
+                x: 80, y: 30,
+                landmarks: [
+                    {
+                        id: 'sagrada',
+                        name: 'Sagrada Família',
+                        icon: '⛪',
+                        x: 40, y: 40,
+                        unlockDate: "2023-01-01T00:00:00",
+                        image: "https://images.unsplash.com/photo-1583779457094-0068806775fb?q=80&w=800",
+                        message: "高迪的曲线属于上帝，但我们的友谊直线连接！生日快乐！🎂"
+                    },
+                    {
+                        id: 'beach',
+                        name: 'Barceloneta Beach',
+                        icon: '🏖️',
+                        x: 70, y: 70,
+                        unlockDate: "2025-05-20T00:00:00", 
+                        image: "https://images.unsplash.com/photo-1512766572373-2c01d4b76999",
+                        message: "海风和啤酒都准备好啦！🍻"
+                    }
+                ]
+            }
+        };
+
+        let currentView = 'country'; 
+        let currentCityId = null;
+
+        const countryViewEl = document.getElementById('country-view');
+        const cityViewEl = document.getElementById('city-view');
+        const backBtn = document.getElementById('back-btn');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const toastEl = document.getElementById('toast');
+        const cityNameDisplay = document.getElementById('city-name-display');
+        
+        // 获取背景绘制 Canvas
+        const bgCanvas = document.getElementById('map-bg-canvas');
+        const bgCtx = bgCanvas.getContext('2d');
+
+        function init() {
+            // 初始化绘制国家地图
+            drawMapBackground('country');
+            renderCountryMap();
+            
+            backBtn.addEventListener('click', () => {
+                if (currentView === 'city') {
+                    switchView('country');
+                }
+            });
+        }
+
+        /* ==========================================
+           🎨 Pixel Art Map Generator (地理风格重构版)
+           注重：轮廓、行政区块、地形质感，去除具体建筑
+           ========================================== */
+        function drawMapBackground(type) {
+            const w = bgCanvas.width;
+            const h = bgCanvas.height;
+            
+            // 1. 基础海洋背景 (加一点深海纹理)
+            bgCtx.fillStyle = '#4B9CD3'; // 海洋蓝
+            bgCtx.fillRect(0, 0, w, h);
+            
+            // 深海噪点
+            bgCtx.fillStyle = '#418BBF';
+            for(let i=0; i<500; i++) {
+                if(Math.random() > 0.5) bgCtx.fillRect(Math.random()*w, Math.random()*h, 2, 1);
+            }
+
+            // 2. 根据不同类型绘制地形
+            if (type === 'country') {
+                drawSpainGeo(w, h);
+            } else if (type === 'madrid') {
+                drawMadridGeo(w, h);
+            } else if (type === 'sevilla') {
+                drawSevillaGeo(w, h);
+            } else if (type === 'barcelona') {
+                drawBarcelonaGeo(w, h);
+            }
+        }
+
+        // 辅助：添加地形噪点
+        function addNoise(ctx, width, height, density, color) {
+            ctx.fillStyle = color;
+            for(let i=0; i < (width * height * density); i++) {
+                const x = Math.random() * width;
+                const y = Math.random() * height;
+                // 只画 1x1 的像素点
+                ctx.fillRect(Math.floor(x), Math.floor(y), 1, 1);
+            }
+        }
+
+        // 绘制西班牙全图 (地理区块风格)
+        function drawSpainGeo(w, h) {
+            bgCtx.save();
+
+            // --- 1. 绘制伊比利亚半岛轮廓 ---
+            bgCtx.beginPath();
+            // 从比利牛斯山脉开始顺时针画
+            bgCtx.moveTo(80, 20);  // 东北角
+            bgCtx.lineTo(100, 30); // 加泰罗尼亚海岸
+            bgCtx.lineTo(90, 60);  // 瓦伦西亚海岸
+            bgCtx.lineTo(70, 90);  // 东南角
+            bgCtx.lineTo(50, 100); // 南端 (直布罗陀附近)
+            bgCtx.lineTo(30, 90);  // 加的斯湾
+            bgCtx.lineTo(20, 70);  // 葡萄牙边界南
+            bgCtx.lineTo(20, 40);  // 葡萄牙边界北
+            bgCtx.lineTo(30, 25);  // 西北角 (加利西亚)
+            bgCtx.lineTo(60, 25);  // 北部海岸
+            bgCtx.closePath();
+
+            // 填充基础陆地色 (中部高原色)
+            bgCtx.fillStyle = '#E5D5B5'; 
+            bgCtx.fill();
+
+            // 描边 (海岸线)
+            bgCtx.strokeStyle = '#8B7E66'; // 深褐色边界
+            bgCtx.lineWidth = 1;
+            bgCtx.stroke();
+
+            // 裁剪区域：后续绘制只在陆地范围内
+            bgCtx.clip();
+
+            // --- 2. 行政区/地理区块划分 (色块表示) ---
+
+            // A. 北部：绿色湿润带 (Galicia, Asturias, Basque)
+            bgCtx.fillStyle = '#A3CFA3'; // 浅绿
+            bgCtx.beginPath();
+            bgCtx.moveTo(20, 20);
+            bgCtx.lineTo(90, 20);
+            bgCtx.lineTo(90, 35);
+            // 稍微波浪线模拟山脉边缘
+            bgCtx.lineTo(60, 40);
+            bgCtx.lineTo(20, 35);
+            bgCtx.fill();
+
+            // B. 东北部：阿拉贡与加泰罗尼亚 (偏红褐色)
+            bgCtx.fillStyle = '#D6C095'; 
+            bgCtx.beginPath();
+            bgCtx.moveTo(70, 30);
+            bgCtx.lineTo(110, 30);
+            bgCtx.lineTo(100, 70);
+            bgCtx.lineTo(70, 50);
+            bgCtx.fill();
+
+            // C. 南部：安达卢西亚 (暖黄色)
+            bgCtx.fillStyle = '#F0E0B0';
+            bgCtx.beginPath();
+            bgCtx.moveTo(20, 70);
+            bgCtx.lineTo(100, 70);
+            bgCtx.lineTo(60, 110);
+            bgCtx.lineTo(20, 110);
+            bgCtx.fill();
+            
+            // D. 葡萄牙区域 (虽然是西班牙地图，但要留出葡萄牙的位置以显真实)
+            // 用稍微灰一点的颜色表示"非游玩区域"
+            bgCtx.fillStyle = '#D0D0D0';
+            bgCtx.fillRect(15, 35, 15, 50);
+
+            // --- 3. 细节质感 ---
+            // 全局噪点模拟土地纹理
+            addNoise(bgCtx, w, h, 0.05, 'rgba(139, 69, 19, 0.1)');
+            
+            // --- 4. 简单行政边界线 (虚线效果) ---
+            bgCtx.strokeStyle = 'rgba(139, 69, 19, 0.3)';
+            bgCtx.setLineDash([2, 2]); // 像素虚线
+            bgCtx.beginPath();
+            // 横切线 (北/中分界)
+            bgCtx.moveTo(30, 40); bgCtx.lineTo(90, 35);
+            // 横切线 (中/南分界)
+            bgCtx.moveTo(30, 75); bgCtx.lineTo(90, 70);
+            bgCtx.stroke();
+            bgCtx.setLineDash([]); // 重置
+
+            bgCtx.restore();
+        }
+
+        // 绘制马德里 (地形图风格：高原中心)
+        function drawMadridGeo(w, h) {
+            // 1. 干燥高原底色
+            bgCtx.fillStyle = '#E0C8A0'; 
+            bgCtx.fillRect(0, 0, w, h);
+
+            // 2. 城市建成区 (Urban Area) - 不规则的中心色块
+            bgCtx.fillStyle = '#D0B890'; // 稍深的城区色
+            bgCtx.beginPath();
+            bgCtx.arc(w/2, h/2, 30, 0, Math.PI*2);
+            bgCtx.fill();
+
+            // 3. 核心老城区
+            bgCtx.fillStyle = '#C0A070';
+            bgCtx.beginPath();
+            bgCtx.arc(w/2, h/2, 10, 0, Math.PI*2);
+            bgCtx.fill();
+
+            // 4. 主要河流 (Manzanares) - 简单的线条
+            bgCtx.strokeStyle = '#70A0C0';
+            bgCtx.lineWidth = 2;
+            bgCtx.beginPath();
+            bgCtx.moveTo(w/2 - 10, 0);
+            bgCtx.quadraticCurveTo(w/2 - 20, h/2, w/2 - 10, h);
+            bgCtx.stroke();
+
+            // 5. 环状路网示意 (M-30/M-40)
+            bgCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            bgCtx.lineWidth = 1;
+            bgCtx.beginPath();
+            bgCtx.arc(w/2, h/2, 20, 0, Math.PI*2);
+            bgCtx.stroke();
+
+            // 6. 地形噪点
+            addNoise(bgCtx, w, h, 0.1, 'rgba(160, 82, 45, 0.1)');
+        }
+
+        // 绘制塞维利亚 (地形图风格：河谷平原)
+        function drawSevillaGeo(w, h) {
+            // 1. 沃土底色
+            bgCtx.fillStyle = '#D8E6C0'; // 偏绿的农田色
+            bgCtx.fillRect(0, 0, w, h);
+
+            // 2. 大河 (Guadalquivir) - 显著特征
+            bgCtx.fillStyle = '#4B9CD3';
+            bgCtx.beginPath();
+            bgCtx.moveTo(40, 0);
+            bgCtx.bezierCurveTo(60, 40, 20, 80, 30, 128);
+            bgCtx.lineTo(45, 128); // 河宽
+            bgCtx.bezierCurveTo(35, 80, 75, 40, 55, 0);
+            bgCtx.fill();
+
+            // 3. 城市聚落 (河岸边)
+            bgCtx.fillStyle = '#E0C090';
+            bgCtx.beginPath();
+            bgCtx.ellipse(60, 60, 15, 25, 0.2, 0, Math.PI*2);
+            bgCtx.fill();
+
+            // 4. 农田纹理 (Grid pattern)
+            bgCtx.fillStyle = 'rgba(100, 128, 0, 0.05)';
+            for(let y=0; y<h; y+=16) {
+                bgCtx.fillRect(0, y, w, 1);
+            }
+        }
+
+        // 绘制巴塞罗那 (地形图风格：山海之间)
+        function drawBarcelonaGeo(w, h) {
+            // 1. 深海背景
+            bgCtx.fillStyle = '#4B9CD3';
+            bgCtx.fillRect(0, 0, w, h);
+
+            // 2. 陆地 (左上角三角)
+            bgCtx.fillStyle = '#E0D0B0';
+            bgCtx.beginPath();
+            bgCtx.moveTo(0, 0);
+            bgCtx.lineTo(w, 0);
+            bgCtx.lineTo(0, h);
+            bgCtx.fill();
+
+            // 3. 海岸线描边
+            bgCtx.strokeStyle = '#F0E090'; // 沙滩色
+            bgCtx.lineWidth = 3;
+            bgCtx.beginPath();
+            bgCtx.moveTo(w, 0);
+            bgCtx.lineTo(0, h);
+            bgCtx.stroke();
+
+            // 4. 城市建成区 (沿海长条)
+            bgCtx.fillStyle = '#D0A080'; // 红砖色调
+            bgCtx.beginPath();
+            bgCtx.moveTo(10, 10);
+            bgCtx.lineTo(w-20, 10);
+            bgCtx.lineTo(10, h-20);
+            bgCtx.fill();
+
+            // 5. Eixample 纹理 (不需要画格子，用网点表示密集度)
+            bgCtx.fillStyle = 'rgba(139, 0, 0, 0.1)';
+            for(let x=10; x<w; x+=4) {
+                for(let y=10; y<h; y+=4) {
+                    if(x + y < w - 10) { // 在陆地范围内
+                        bgCtx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+
+            // 6. 后方山脉 (Tibidabo)
+            bgCtx.fillStyle = '#8B9B70';
+            bgCtx.beginPath();
+            bgCtx.moveTo(0, 0);
+            bgCtx.lineTo(60, 0);
+            bgCtx.lineTo(0, 60);
+            bgCtx.fill();
+        }
+
+        function renderCountryMap() {
+            countryViewEl.innerHTML = '<div style="position:absolute; top:10px; right:10px; font-size:14px; opacity:0.8; background: rgba(255,255,255,0.7); padding: 2px 5px; border-radius: 4px;">MAP: SPAIN</div>';
+            Object.values(GAME_DATA).forEach(city => {
+                const marker = createMarker(city.x, city.y, city.icon, city.name, false);
+                marker.onclick = () => enterCity(city.id);
+                countryViewEl.appendChild(marker);
+            });
+        }
+
+        function renderCityMap(cityId) {
+            const cityData = GAME_DATA[cityId];
+            currentCityId = cityId;
+            cityViewEl.innerHTML = '';
+            cityNameDisplay.innerText = `CITY: ${cityData.name.toUpperCase()}`;
+            cityViewEl.appendChild(cityNameDisplay);
+
+            cityData.landmarks.forEach(landmark => {
+                const isLocked = checkIsLocked(landmark.unlockDate);
+                const marker = createMarker(landmark.x, landmark.y, landmark.icon, landmark.name, isLocked);
+                marker.onclick = () => handleLandmarkClick(landmark);
+                cityViewEl.appendChild(marker);
+            });
+        }
+
+        function createMarker(x, y, icon, label, isLocked) {
+            const el = document.createElement('div');
+            el.className = `marker ${isLocked ? 'locked' : ''}`;
+            el.style.left = `${x}%`;
+            el.style.top = `${y}%`;
+            el.style.animationDelay = `${Math.random() * 2}s`;
+
+            el.innerHTML = `
+                <div class="marker-icon">${icon}</div>
+                <div class="marker-label">${label}${isLocked ? ' 🔒' : ''}</div>
+            `;
+            return el;
+        }
+
+        function switchView(viewName) {
+            if (viewName === 'city') {
+                countryViewEl.classList.add('hidden');
+                cityViewEl.classList.remove('hidden');
+                backBtn.style.display = 'block';
+                currentView = 'city';
+                // 绘制对应城市的背景
+                drawMapBackground(currentCityId);
+            } else {
+                cityViewEl.classList.add('hidden');
+                countryViewEl.classList.remove('hidden');
+                backBtn.style.display = 'none';
+                currentView = 'country';
+                // 绘制国家背景
+                drawMapBackground('country');
+            }
+        }
+
+        function enterCity(cityId) {
+            currentCityId = cityId; // 必须先设置 currentCityId
+            renderCityMap(cityId);
+            switchView('city');
+        }
+
+        function handleLandmarkClick(landmark) {
+            const isLocked = checkIsLocked(landmark.unlockDate);
+            if (isLocked) {
+                const dateObj = new Date(landmark.unlockDate);
+                const dateStr = `${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+                showToast(`⏳ 还没有到时间哦！<br>请等到 ${dateStr} 再来解锁！`);
+            } else {
+                showModal(landmark);
+                fireConfetti();
+            }
+        }
+
+        function checkIsLocked(unlockDateStr) {
+            const now = new Date();
+            const unlockTime = new Date(unlockDateStr);
+            return now < unlockTime;
+        }
+
+        let toastTimeout;
+        function showToast(msg) {
+            toastEl.innerHTML = msg;
+            toastEl.style.display = 'block';
+            toastEl.style.animation = 'toastFadeIn 0.3s ease-out forwards';
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toastEl.style.display = 'none';
+            }, 1500);
+        }
+
+        function showModal(landmark) {
+            document.getElementById('modal-title-text').innerText = landmark.name;
+            const imgEl = document.getElementById('modal-image');
+            imgEl.src = ''; 
+            imgEl.src = landmark.image;
+            imgEl.onerror = function() {
+                this.style.backgroundColor = '#ccc';
+                this.style.backgroundImage = 'none'; 
+            };
+            document.getElementById('modal-message').innerText = landmark.message;
+            modalOverlay.style.display = 'flex';
+        }
+
+        function closeModal() {
+            modalOverlay.style.display = 'none';
+        }
+
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let confetti = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function fireConfetti() {
+            for (let i = 0; i < 100; i++) {
+                confetti.push({
+                    x: window.innerWidth / 2,
+                    y: window.innerHeight / 2,
+                    w: Math.random() * 10 + 5,
+                    h: Math.random() * 10 + 5,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                    vx: (Math.random() - 0.5) * 20,
+                    vy: (Math.random() - 0.5) * 20 - 5,
+                    grav: 0.5
+                });
+            }
+            animateConfetti();
+        }
+
+        function animateConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            confetti.forEach((c, index) => {
+                c.x += c.vx;
+                c.y += c.vy;
+                c.vy += c.grav;
+                c.vx *= 0.95;
+                ctx.fillStyle = c.color;
+                ctx.fillRect(c.x, c.y, c.w, c.h);
+                if (c.y > canvas.height) {
+                    confetti.splice(index, 1);
+                }
+            });
+            if (confetti.length > 0) {
+                requestAnimationFrame(animateConfetti);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
