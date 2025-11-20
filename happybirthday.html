@@ -143,13 +143,22 @@
             flex-direction: column;
             align-items: center;
             z-index: 5;
-            animation: float 2s infinite ease-in-out;
+            
+            /* 增大点击热区 */
+            padding: 15px;        /* 增加透明内边距，扩大触摸面积 */
+            margin-bottom: -15px; /* 修正因 padding 导致的视觉偏移 */
+            
+            /* 消除移动端点击高亮背景块 */
+            -webkit-tap-highlight-color: transparent;
         }
 
         .marker-icon {
             font-size: 32px;
             filter: drop-shadow(3px 3px 0 rgba(0,0,0,0.3));
             transition: transform 0.2s;
+            
+            /* 浮动动画 */
+            animation: float 2s infinite ease-in-out;
         }
 
         .marker.locked .marker-icon {
@@ -167,15 +176,18 @@
             box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
             white-space: nowrap;
             font-family: 'VT323', 'DotGothic16', monospace;
+            position: relative;
+            z-index: 2;
         }
 
         .marker:active .marker-icon {
             transform: scale(0.9);
+            animation-play-state: paused;
         }
 
         @keyframes float {
-            0%, 100% { transform: translate(-50%, -100%); }
-            50% { transform: translate(-50%, -110%); }
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); } 
         }
 
         #toast {
@@ -269,32 +281,28 @@
             text-align: center;
             display: flex;
             flex-direction: column;
-            /* 关键修复1：允许滚动，防止内容在矮屏幕被截断 */
+            /* 允许滚动 */
             overflow-y: auto; 
             flex: 1;
             
-            /* 隐藏滚动条 (兼容各浏览器)，保持美观 */
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE/Edge */
+            /* 隐藏滚动条 */
+            scrollbar-width: none; 
+            -ms-overflow-style: none; 
         }
-        /* 隐藏滚动条 (Chrome/Safari) */
         .modal-body::-webkit-scrollbar {
             display: none;
         }
 
-        /* 新增：图片包裹容器 */
+        /* 图片包裹容器 */
         .img-wrapper {
-            /* 关键修复2：移除 flex: 1，不再强制撑满，避免挤压 */
             width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            /* 移除 overflow: hidden，防止截断阴影或边缘 */
             min-height: 150px;
-            margin-bottom: 10px; /* 增加一点底部间距 */
+            margin-bottom: 10px; 
             background: transparent;
             transition: background 0.2s;
-            /* 防止图片容器被文字挤压 */
             flex-shrink: 0;
         }
 
@@ -354,6 +362,8 @@
             height: 100%;
             pointer-events: none;
             z-index: 60;
+            /* 修复1: 默认隐藏 Canvas，物理杜绝遮挡点击 */
+            display: none; 
         }
 
         .footer-deco {
@@ -378,7 +388,6 @@
         </header>
 
         <div id="map-container">
-            <!-- 提升 Canvas 分辨率到 128x128，让像素更细腻 -->
             <canvas id="map-bg-canvas" width="128" height="128"></canvas>
 
             <!-- 国家层：西班牙全图 -->
@@ -402,9 +411,9 @@
                 <div class="close-btn" onclick="closeModal()">×</div>
             </div>
             <div class="modal-body">
-                <!-- 修改：增加 wrapper 包裹层 -->
-                <div class="img-wrapper" id="modal-img-wrapper">
-                    <img src="" alt="Scenery" class="modal-img" id="modal-image">
+                <!-- 修改了ID以防冲突 -->
+                <div class="img-wrapper" id="spain-modal-img-wrapper">
+                    <img src="" alt="Scenery" class="modal-img" id="spain-modal-image">
                 </div>
                 <p class="modal-text" id="modal-message"></p>
             </div>
@@ -428,6 +437,7 @@
                         icon: '🐻', 
                         x: 50, y: 50,
                         unlockDate: "2023-10-01T00:00:00", 
+                        // 已恢复为您指定的链接
                         image: "https://s2.imgbb.ws/file/storage-sv2/XGAYO.jpg", 
                         message: "生日快乐！就像马德里的中心，你也是我心中的C位！愿你永远闪闪发光✨"
                     },
@@ -497,12 +507,10 @@
         const toastEl = document.getElementById('toast');
         const cityNameDisplay = document.getElementById('city-name-display');
         
-        // 获取背景绘制 Canvas
         const bgCanvas = document.getElementById('map-bg-canvas');
         const bgCtx = bgCanvas.getContext('2d');
 
         function init() {
-            // 初始化绘制国家地图
             drawMapBackground('country');
             renderCountryMap();
             
@@ -513,25 +521,18 @@
             });
         }
 
-        /* ==========================================
-           🎨 Pixel Art Map Generator (地理风格重构版)
-           注重：轮廓、行政区块、地形质感，去除具体建筑
-           ========================================== */
         function drawMapBackground(type) {
             const w = bgCanvas.width;
             const h = bgCanvas.height;
             
-            // 1. 基础海洋背景 (加一点深海纹理)
-            bgCtx.fillStyle = '#4B9CD3'; // 海洋蓝
+            bgCtx.fillStyle = '#4B9CD3'; 
             bgCtx.fillRect(0, 0, w, h);
             
-            // 深海噪点
             bgCtx.fillStyle = '#418BBF';
             for(let i=0; i<500; i++) {
                 if(Math.random() > 0.5) bgCtx.fillRect(Math.random()*w, Math.random()*h, 2, 1);
             }
 
-            // 2. 根据不同类型绘制地形
             if (type === 'country') {
                 drawSpainGeo(w, h);
             } else if (type === 'madrid') {
@@ -543,62 +544,47 @@
             }
         }
 
-        // 辅助：添加地形噪点
         function addNoise(ctx, width, height, density, color) {
             ctx.fillStyle = color;
             for(let i=0; i < (width * height * density); i++) {
                 const x = Math.random() * width;
                 const y = Math.random() * height;
-                // 只画 1x1 的像素点
                 ctx.fillRect(Math.floor(x), Math.floor(y), 1, 1);
             }
         }
 
-        // 绘制西班牙全图 (地理区块风格)
         function drawSpainGeo(w, h) {
             bgCtx.save();
-
-            // --- 1. 绘制伊比利亚半岛轮廓 ---
             bgCtx.beginPath();
-            // 从比利牛斯山脉开始顺时针画
-            bgCtx.moveTo(80, 20);  // 东北角
-            bgCtx.lineTo(100, 30); // 加泰罗尼亚海岸
-            bgCtx.lineTo(90, 60);  // 瓦伦西亚海岸
-            bgCtx.lineTo(70, 90);  // 东南角
-            bgCtx.lineTo(50, 100); // 南端 (直布罗陀附近)
-            bgCtx.lineTo(30, 90);  // 加的斯湾
-            bgCtx.lineTo(20, 70);  // 葡萄牙边界南
-            bgCtx.lineTo(20, 40);  // 葡萄牙边界北
-            bgCtx.lineTo(30, 25);  // 西北角 (加利西亚)
-            bgCtx.lineTo(60, 25);  // 北部海岸
+            bgCtx.moveTo(80, 20);  
+            bgCtx.lineTo(100, 30); 
+            bgCtx.lineTo(90, 60);  
+            bgCtx.lineTo(70, 90);  
+            bgCtx.lineTo(50, 100); 
+            bgCtx.lineTo(30, 90);  
+            bgCtx.lineTo(20, 70);  
+            bgCtx.lineTo(20, 40);  
+            bgCtx.lineTo(30, 25);  
+            bgCtx.lineTo(60, 25);  
             bgCtx.closePath();
 
-            // 填充基础陆地色 (中部高原色)
             bgCtx.fillStyle = '#E5D5B5'; 
             bgCtx.fill();
-
-            // 描边 (海岸线)
-            bgCtx.strokeStyle = '#8B7E66'; // 深褐色边界
+            bgCtx.strokeStyle = '#8B7E66'; 
             bgCtx.lineWidth = 1;
             bgCtx.stroke();
 
-            // 裁剪区域：后续绘制只在陆地范围内
             bgCtx.clip();
 
-            // --- 2. 行政区/地理区块划分 (色块表示) ---
-
-            // A. 北部：绿色湿润带 (Galicia, Asturias, Basque)
-            bgCtx.fillStyle = '#A3CFA3'; // 浅绿
+            bgCtx.fillStyle = '#A3CFA3'; 
             bgCtx.beginPath();
             bgCtx.moveTo(20, 20);
             bgCtx.lineTo(90, 20);
             bgCtx.lineTo(90, 35);
-            // 稍微波浪线模拟山脉边缘
             bgCtx.lineTo(60, 40);
             bgCtx.lineTo(20, 35);
             bgCtx.fill();
 
-            // B. 东北部：阿拉贡与加泰罗尼亚 (偏红褐色)
             bgCtx.fillStyle = '#D6C095'; 
             bgCtx.beginPath();
             bgCtx.moveTo(70, 30);
@@ -607,7 +593,6 @@
             bgCtx.lineTo(70, 50);
             bgCtx.fill();
 
-            // C. 南部：安达卢西亚 (暖黄色)
             bgCtx.fillStyle = '#F0E0B0';
             bgCtx.beginPath();
             bgCtx.moveTo(20, 70);
@@ -616,48 +601,36 @@
             bgCtx.lineTo(20, 110);
             bgCtx.fill();
             
-            // D. 葡萄牙区域 (虽然是西班牙地图，但要留出葡萄牙的位置以显真实)
-            // 用稍微灰一点的颜色表示"非游玩区域"
             bgCtx.fillStyle = '#D0D0D0';
             bgCtx.fillRect(15, 35, 15, 50);
 
-            // --- 3. 细节质感 ---
-            // 全局噪点模拟土地纹理
             addNoise(bgCtx, w, h, 0.05, 'rgba(139, 69, 19, 0.1)');
             
-            // --- 4. 简单行政边界线 (虚线效果) ---
             bgCtx.strokeStyle = 'rgba(139, 69, 19, 0.3)';
-            bgCtx.setLineDash([2, 2]); // 像素虚线
+            bgCtx.setLineDash([2, 2]); 
             bgCtx.beginPath();
-            // 横切线 (北/中分界)
             bgCtx.moveTo(30, 40); bgCtx.lineTo(90, 35);
-            // 横切线 (中/南分界)
             bgCtx.moveTo(30, 75); bgCtx.lineTo(90, 70);
             bgCtx.stroke();
-            bgCtx.setLineDash([]); // 重置
+            bgCtx.setLineDash([]); 
 
             bgCtx.restore();
         }
 
-        // 绘制马德里 (地形图风格：高原中心)
         function drawMadridGeo(w, h) {
-            // 1. 干燥高原底色
             bgCtx.fillStyle = '#E0C8A0'; 
             bgCtx.fillRect(0, 0, w, h);
 
-            // 2. 城市建成区 (Urban Area) - 不规则的中心色块
-            bgCtx.fillStyle = '#D0B890'; // 稍深的城区色
+            bgCtx.fillStyle = '#D0B890'; 
             bgCtx.beginPath();
             bgCtx.arc(w/2, h/2, 30, 0, Math.PI*2);
             bgCtx.fill();
 
-            // 3. 核心老城区
             bgCtx.fillStyle = '#C0A070';
             bgCtx.beginPath();
             bgCtx.arc(w/2, h/2, 10, 0, Math.PI*2);
             bgCtx.fill();
 
-            // 4. 主要河流 (Manzanares) - 简单的线条
             bgCtx.strokeStyle = '#70A0C0';
             bgCtx.lineWidth = 2;
             bgCtx.beginPath();
@@ -665,52 +638,42 @@
             bgCtx.quadraticCurveTo(w/2 - 20, h/2, w/2 - 10, h);
             bgCtx.stroke();
 
-            // 5. 环状路网示意 (M-30/M-40)
             bgCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
             bgCtx.lineWidth = 1;
             bgCtx.beginPath();
             bgCtx.arc(w/2, h/2, 20, 0, Math.PI*2);
             bgCtx.stroke();
 
-            // 6. 地形噪点
             addNoise(bgCtx, w, h, 0.1, 'rgba(160, 82, 45, 0.1)');
         }
 
-        // 绘制塞维利亚 (地形图风格：河谷平原)
         function drawSevillaGeo(w, h) {
-            // 1. 沃土底色
-            bgCtx.fillStyle = '#D8E6C0'; // 偏绿的农田色
+            bgCtx.fillStyle = '#D8E6C0'; 
             bgCtx.fillRect(0, 0, w, h);
 
-            // 2. 大河 (Guadalquivir) - 显著特征
             bgCtx.fillStyle = '#4B9CD3';
             bgCtx.beginPath();
             bgCtx.moveTo(40, 0);
             bgCtx.bezierCurveTo(60, 40, 20, 80, 30, 128);
-            bgCtx.lineTo(45, 128); // 河宽
+            bgCtx.lineTo(45, 128); 
             bgCtx.bezierCurveTo(35, 80, 75, 40, 55, 0);
             bgCtx.fill();
 
-            // 3. 城市聚落 (河岸边)
             bgCtx.fillStyle = '#E0C090';
             bgCtx.beginPath();
             bgCtx.ellipse(60, 60, 15, 25, 0.2, 0, Math.PI*2);
             bgCtx.fill();
 
-            // 4. 农田纹理 (Grid pattern)
             bgCtx.fillStyle = 'rgba(100, 128, 0, 0.05)';
             for(let y=0; y<h; y+=16) {
                 bgCtx.fillRect(0, y, w, 1);
             }
         }
 
-        // 绘制巴塞罗那 (地形图风格：山海之间)
         function drawBarcelonaGeo(w, h) {
-            // 1. 深海背景
             bgCtx.fillStyle = '#4B9CD3';
             bgCtx.fillRect(0, 0, w, h);
 
-            // 2. 陆地 (左上角三角)
             bgCtx.fillStyle = '#E0D0B0';
             bgCtx.beginPath();
             bgCtx.moveTo(0, 0);
@@ -718,33 +681,29 @@
             bgCtx.lineTo(0, h);
             bgCtx.fill();
 
-            // 3. 海岸线描边
-            bgCtx.strokeStyle = '#F0E090'; // 沙滩色
+            bgCtx.strokeStyle = '#F0E090'; 
             bgCtx.lineWidth = 3;
             bgCtx.beginPath();
             bgCtx.moveTo(w, 0);
             bgCtx.lineTo(0, h);
             bgCtx.stroke();
 
-            // 4. 城市建成区 (沿海长条)
-            bgCtx.fillStyle = '#D0A080'; // 红砖色调
+            bgCtx.fillStyle = '#D0A080'; 
             bgCtx.beginPath();
             bgCtx.moveTo(10, 10);
             bgCtx.lineTo(w-20, 10);
             bgCtx.lineTo(10, h-20);
             bgCtx.fill();
 
-            // 5. Eixample 纹理 (不需要画格子，用网点表示密集度)
             bgCtx.fillStyle = 'rgba(139, 0, 0, 0.1)';
             for(let x=10; x<w; x+=4) {
                 for(let y=10; y<h; y+=4) {
-                    if(x + y < w - 10) { // 在陆地范围内
+                    if(x + y < w - 10) { 
                         bgCtx.fillRect(x, y, 1, 1);
                     }
                 }
             }
 
-            // 6. 后方山脉 (Tibidabo)
             bgCtx.fillStyle = '#8B9B70';
             bgCtx.beginPath();
             bgCtx.moveTo(0, 0);
@@ -797,20 +756,18 @@
                 cityViewEl.classList.remove('hidden');
                 backBtn.style.display = 'block';
                 currentView = 'city';
-                // 绘制对应城市的背景
                 drawMapBackground(currentCityId);
             } else {
                 cityViewEl.classList.add('hidden');
                 countryViewEl.classList.remove('hidden');
                 backBtn.style.display = 'none';
                 currentView = 'country';
-                // 绘制国家背景
                 drawMapBackground('country');
             }
         }
 
         function enterCity(cityId) {
-            currentCityId = cityId; // 必须先设置 currentCityId
+            currentCityId = cityId; 
             renderCityMap(cityId);
             switchView('city');
         }
@@ -845,49 +802,71 @@
         }
 
         function showModal(landmark) {
-            document.getElementById('modal-title-text').innerText = landmark.name;
-            
-            const wrapper = document.getElementById('modal-img-wrapper');
-            const imgEl = document.getElementById('modal-image');
-            
-            // 1. 重置为加载状态
-            wrapper.classList.add('loading'); // 显示背景动画
-            wrapper.style.border = '2px solid #000'; // 显示容器占位边框
-            
-            imgEl.style.opacity = '0'; // 隐藏图片，防止加载一半显示出来
-            imgEl.src = ''; // 清空旧图
-            imgEl.src = landmark.image;
-            
-            // 2. 图片加载成功回调
-            imgEl.onload = function() {
-                // 移除容器的加载动效和边框
-                wrapper.classList.remove('loading');
-                wrapper.style.border = 'none'; 
+            // 使用更具体的ID获取元素，并添加了容错
+            const titleEl = document.getElementById('modal-title-text');
+            const wrapper = document.getElementById('spain-modal-img-wrapper');
+            // 注意：不再需要获取 imgEl，因为我们将在下面动态创建它
+            const msgEl = document.getElementById('modal-message');
+
+            if (titleEl) titleEl.innerText = landmark.name;
+            if (msgEl) msgEl.innerText = landmark.message;
+
+            if (wrapper) {
+                // 1. 关键修复：每次打开前彻底清空容器
+                // 这样可以清除之前的错误提示文字，或者旧的图片状态
+                wrapper.innerHTML = ''; 
                 
-                // 淡入显示图片
-                this.style.opacity = '1';
-            };
+                // 2. 动态创建一个全新的图片元素
+                const newImg = document.createElement('img');
+                newImg.id = 'spain-modal-image';
+                newImg.className = 'modal-img';
+                newImg.alt = 'Scenery';
+                
+                // 初始状态：透明（为了做淡入效果）
+                newImg.style.opacity = '0';
+                
+                // 将新图片添加到容器中
+                wrapper.appendChild(newImg);
+                
+                // 3. 设置加载中状态（背景动画 + 边框）
+                wrapper.classList.add('loading'); 
+                wrapper.style.border = '2px solid #000'; 
+                
+                // 4. 绑定事件
+                newImg.onload = function() {
+                    wrapper.classList.remove('loading');
+                    wrapper.style.border = 'none'; 
+                    this.style.opacity = '1';
+                };
+                
+                newImg.onerror = function() {
+                    wrapper.classList.remove('loading');
+                    // 如果出错，用文字替换图片（这会导致图片元素消失，但没关系，
+                    // 因为下次打开时我们会执行 wrapper.innerHTML = '' 重置回来）
+                    wrapper.innerHTML = '<span style="font-family:\'VT323\', monospace; font-size: 16px;">Image not found :(</span>';
+                    wrapper.style.border = '2px solid #000';
+                };
+                
+                // 5. 设置图片源（最后设置，触发加载）
+                newImg.src = landmark.image;
+                
+            } else {
+                console.warn("Modal wrapper not found.");
+            }
             
-            // 3. 图片加载失败处理
-            imgEl.onerror = function() {
-                wrapper.classList.remove('loading');
-                // 显示一个简单的错误占位
-                this.style.display = 'none';
-                wrapper.innerText = "Image not found :(";
-                wrapper.style.fontFamily = "VT323";
-            };
-            
-            document.getElementById('modal-message').innerText = landmark.message;
-            modalOverlay.style.display = 'flex';
+            const modalOverlay = document.getElementById('modal-overlay');
+            if(modalOverlay) modalOverlay.style.display = 'flex';
         }
 
         function closeModal() {
-            modalOverlay.style.display = 'none';
+            document.getElementById('modal-overlay').style.display = 'none';
         }
 
         const canvas = document.getElementById('confetti-canvas');
         const ctx = canvas.getContext('2d');
         let confetti = [];
+        // 修复2: 增加动画状态标志位
+        let isConfettiAnimating = false;
 
         function resizeCanvas() {
             canvas.width = window.innerWidth;
@@ -897,6 +876,10 @@
         resizeCanvas();
 
         function fireConfetti() {
+            // 每次发射时，先确保 Canvas 是显示的
+            canvas.style.display = 'block';
+
+            // 生成 100 个碎片
             for (let i = 0; i < 100; i++) {
                 confetti.push({
                     x: window.innerWidth / 2,
@@ -909,24 +892,42 @@
                     grav: 0.5
                 });
             }
-            animateConfetti();
+
+            // 修复3: 只有当动画未运行时，才启动循环
+            // 如果已经在运行，上面的 push 已经把新粒子加进去了，现有的循环会自动处理
+            if (!isConfettiAnimating) {
+                isConfettiAnimating = true;
+                animateConfetti();
+            }
         }
 
         function animateConfetti() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            confetti.forEach((c, index) => {
+            
+            // 倒序遍历，方便删除
+            for (let i = confetti.length - 1; i >= 0; i--) {
+                let c = confetti[i];
                 c.x += c.vx;
                 c.y += c.vy;
                 c.vy += c.grav;
                 c.vx *= 0.95;
+                
                 ctx.fillStyle = c.color;
                 ctx.fillRect(c.x, c.y, c.w, c.h);
+                
                 if (c.y > canvas.height) {
-                    confetti.splice(index, 1);
+                    confetti.splice(i, 1);
                 }
-            });
+            }
+
             if (confetti.length > 0) {
                 requestAnimationFrame(animateConfetti);
+            } else {
+                // 修复4: 动画结束时，重置状态并隐藏 Canvas
+                isConfettiAnimating = false;
+                canvas.style.display = 'none'; // 隐藏画布，把点击权还给地图
+                // 清空画布以防万一
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
         }
 
