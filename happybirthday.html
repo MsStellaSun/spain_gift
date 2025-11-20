@@ -105,6 +105,10 @@
             border: 4px solid var(--border-color);
             box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
             border-radius: 4px;
+            /* 允许设置背景图片 */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
         /* 背景地图 Canvas */
@@ -429,7 +433,8 @@
                 id: 'madrid',
                 name: 'Madrid',
                 icon: '🏰',
-                x: 50, y: 45, 
+                // 修改：向下平移 y: 45 -> 58，x 微调至 48
+                x: 48, y: 58, 
                 landmarks: [
                     {
                         id: 'sol',
@@ -437,7 +442,6 @@
                         icon: '🐻', 
                         x: 50, y: 50,
                         unlockDate: "2023-10-01T00:00:00", 
-                        // 已恢复为您指定的链接
                         image: "https://s2.imgbb.ws/file/storage-sv2/XGAYO.jpg", 
                         message: "生日快乐！就像马德里的中心，你也是我心中的C位！愿你永远闪闪发光✨"
                     },
@@ -456,7 +460,8 @@
                 id: 'sevilla',
                 name: 'Sevilla',
                 icon: '💃',
-                x: 35, y: 75,
+                // 修改：向下平移 y: 75 -> 86，x 微调至 32
+                x: 32, y: 86,
                 landmarks: [
                     {
                         id: 'plaza',
@@ -473,7 +478,8 @@
                 id: 'barcelona',
                 name: 'Barcelona',
                 icon: '🦎',
-                x: 80, y: 30,
+                // 修改：向下平移 y: 30 -> 42，x 微调至 82
+                x: 82, y: 42,
                 landmarks: [
                     {
                         id: 'sagrada',
@@ -524,25 +530,36 @@
         function drawMapBackground(type) {
             const w = bgCanvas.width;
             const h = bgCanvas.height;
+            const mapContainer = document.getElementById('map-container');
             
-            bgCtx.fillStyle = '#4B9CD3'; 
-            bgCtx.fillRect(0, 0, w, h);
+            // 1. 统一清空 Canvas
+            // 因为现在所有视图都使用精美的背景图片，不再需要 Canvas 绘制的粗糙像素地形了
+            bgCtx.clearRect(0, 0, w, h);
             
-            bgCtx.fillStyle = '#418BBF';
-            for(let i=0; i<500; i++) {
-                if(Math.random() > 0.5) bgCtx.fillRect(Math.random()*w, Math.random()*h, 2, 1);
+            // 2. 根据类型设置背景图片 URL
+            let bgUrl = '';
+            
+            if (type === 'country') {
+                bgUrl = "https://s1.imgbb.ws/file/storage-sv1/XAtIX.jpg";
+            } else if (type === 'madrid') {
+                bgUrl = "https://s1.imgbb.ws/file/storage-sv1/XAtiK.jpg";
+            } else if (type === 'sevilla') {
+                bgUrl = "https://s1.imgbb.ws/file/storage-sv1/XA01t.jpg";
+            } else if (type === 'barcelona') {
+                bgUrl = "https://s1.imgbb.ws/file/storage-sv1/XA0QZ.jpg";
             }
 
-            if (type === 'country') {
-                drawSpainGeo(w, h);
-            } else if (type === 'madrid') {
-                drawMadridGeo(w, h);
-            } else if (type === 'sevilla') {
-                drawSevillaGeo(w, h);
-            } else if (type === 'barcelona') {
-                drawBarcelonaGeo(w, h);
+            // 3. 应用背景
+            if (bgUrl) {
+                mapContainer.style.backgroundImage = `url('${bgUrl}')`;
+            } else {
+                mapContainer.style.backgroundImage = 'none';
             }
         }
+
+        // 下面的辅助绘图函数 (addNoise, drawMadridGeo 等) 虽然保留在代码中，
+        // 但因为 drawMapBackground 不再调用它们，所以不会执行。
+        // 这样如果以后你想换回 Canvas 绘制也很方便。
 
         function addNoise(ctx, width, height, density, color) {
             ctx.fillStyle = color;
@@ -553,69 +570,7 @@
             }
         }
 
-        function drawSpainGeo(w, h) {
-            bgCtx.save();
-            bgCtx.beginPath();
-            bgCtx.moveTo(80, 20);  
-            bgCtx.lineTo(100, 30); 
-            bgCtx.lineTo(90, 60);  
-            bgCtx.lineTo(70, 90);  
-            bgCtx.lineTo(50, 100); 
-            bgCtx.lineTo(30, 90);  
-            bgCtx.lineTo(20, 70);  
-            bgCtx.lineTo(20, 40);  
-            bgCtx.lineTo(30, 25);  
-            bgCtx.lineTo(60, 25);  
-            bgCtx.closePath();
-
-            bgCtx.fillStyle = '#E5D5B5'; 
-            bgCtx.fill();
-            bgCtx.strokeStyle = '#8B7E66'; 
-            bgCtx.lineWidth = 1;
-            bgCtx.stroke();
-
-            bgCtx.clip();
-
-            bgCtx.fillStyle = '#A3CFA3'; 
-            bgCtx.beginPath();
-            bgCtx.moveTo(20, 20);
-            bgCtx.lineTo(90, 20);
-            bgCtx.lineTo(90, 35);
-            bgCtx.lineTo(60, 40);
-            bgCtx.lineTo(20, 35);
-            bgCtx.fill();
-
-            bgCtx.fillStyle = '#D6C095'; 
-            bgCtx.beginPath();
-            bgCtx.moveTo(70, 30);
-            bgCtx.lineTo(110, 30);
-            bgCtx.lineTo(100, 70);
-            bgCtx.lineTo(70, 50);
-            bgCtx.fill();
-
-            bgCtx.fillStyle = '#F0E0B0';
-            bgCtx.beginPath();
-            bgCtx.moveTo(20, 70);
-            bgCtx.lineTo(100, 70);
-            bgCtx.lineTo(60, 110);
-            bgCtx.lineTo(20, 110);
-            bgCtx.fill();
-            
-            bgCtx.fillStyle = '#D0D0D0';
-            bgCtx.fillRect(15, 35, 15, 50);
-
-            addNoise(bgCtx, w, h, 0.05, 'rgba(139, 69, 19, 0.1)');
-            
-            bgCtx.strokeStyle = 'rgba(139, 69, 19, 0.3)';
-            bgCtx.setLineDash([2, 2]); 
-            bgCtx.beginPath();
-            bgCtx.moveTo(30, 40); bgCtx.lineTo(90, 35);
-            bgCtx.moveTo(30, 75); bgCtx.lineTo(90, 70);
-            bgCtx.stroke();
-            bgCtx.setLineDash([]); 
-
-            bgCtx.restore();
-        }
+        // drawSpainGeo 函数暂时保留但未被调用，以防万一你想改回去
 
         function drawMadridGeo(w, h) {
             bgCtx.fillStyle = '#E0C8A0'; 
