@@ -105,8 +105,8 @@
             border: 4px solid var(--border-color);
             box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
             border-radius: 4px;
-            /* 允许设置背景图片 */
-            background-size: cover;
+            /* 强制拉伸图片填满容器 */
+            background-size: 100% 100%;
             background-position: center;
             background-repeat: no-repeat;
         }
@@ -149,8 +149,8 @@
             z-index: 5;
             
             /* 增大点击热区 */
-            padding: 15px;        /* 增加透明内边距，扩大触摸面积 */
-            margin-bottom: -15px; /* 修正因 padding 导致的视觉偏移 */
+            padding: 15px;        
+            margin-bottom: -15px; 
             
             /* 消除移动端点击高亮背景块 */
             -webkit-tap-highlight-color: transparent;
@@ -244,7 +244,7 @@
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             flex-direction: column;
-            /* 修改：提升至 92vh，极限利用屏幕高度 */
+            /* 极限利用屏幕高度 */
             max-height: 92vh; 
         }
 
@@ -325,7 +325,7 @@
         .modal-img {
             display: block;
             max-width: 100%;
-            /* 修改：提升至 70vh，让竖图显示更完整 */
+            /* 让竖图显示更完整 */
             max-height: 70vh; 
             width: auto;
             height: auto;
@@ -366,7 +366,7 @@
             height: 100%;
             pointer-events: none;
             z-index: 60;
-            /* 修复1: 默认隐藏 Canvas，物理杜绝遮挡点击 */
+            /* 默认隐藏 Canvas，物理杜绝遮挡点击 */
             display: none; 
         }
 
@@ -415,7 +415,7 @@
                 <div class="close-btn" onclick="closeModal()">×</div>
             </div>
             <div class="modal-body">
-                <!-- 修改了ID以防冲突 -->
+                <!-- ID 保持独特防止冲突 -->
                 <div class="img-wrapper" id="spain-modal-img-wrapper">
                     <img src="" alt="Scenery" class="modal-img" id="spain-modal-image">
                 </div>
@@ -428,20 +428,22 @@
     <canvas id="confetti-canvas"></canvas>
 
     <script>
+        // -----------------------------------------------------
+        // 🌍 数据配置区域 (GAME DATA)
+        // -----------------------------------------------------
         const GAME_DATA = {
             madrid: {
                 id: 'madrid',
                 name: 'Madrid',
                 icon: '🏰',
-                // 修改：向下平移 y: 45 -> 58，x 微调至 48
                 x: 48, y: 58, 
                 landmarks: [
                     {
                         id: 'sol',
                         name: 'Puerta del Sol',
                         icon: '🐻', 
-                        x: 50, y: 50,
-                        unlockDate: "2023-10-01T00:00:00", 
+                        x: 45, y: 50, // x: 50 -> 45
+                        unlockDate: "2025-11-01T00:00:00", 
                         image: "https://s2.imgbb.ws/file/storage-sv2/XGAYO.jpg", 
                         message: "生日快乐！就像马德里的中心，你也是我心中的C位！愿你永远闪闪发光✨"
                     },
@@ -449,10 +451,28 @@
                         id: 'prado',
                         name: 'Prado Museum',
                         icon: '🎨',
-                        x: 70, y: 60,
-                        unlockDate: "2025-12-20T09:00:00", 
+                        x: 70, y: 55, // x: 75 -> 70
+                        unlockDate: "2023-12-20T09:00:00", 
                         image: "https://images.unsplash.com/photo-1558642452-9d2a7deb7f62",
                         message: "这幅画叫《最好的闺蜜》，是非卖品哦！🎨"
+                    },
+                    {
+                        id: 'royal_palace',
+                        name: 'Royal Palace',
+                        icon: '👑',
+                        x: 25, y: 45, // 位于西部
+                        unlockDate: "2023-01-01T00:00:00",
+                        image: "https://images.unsplash.com/photo-1544237128-493ca8cd0506?q=80&w=800",
+                        message: "像女王一样优雅，像公主一样可爱！马德里王宫欢迎你！👑"
+                    },
+                    {
+                        id: 'retiro',
+                        name: 'El Retiro Park',
+                        icon: '🌳',
+                        x: 82, y: 55, // x: 85 -> 82, y: 45 -> 55 (与普拉多齐平)
+                        unlockDate: "2023-01-01T00:00:00",
+                        image: "https://images.unsplash.com/photo-1572506786002-96e4a4263e89?q=80&w=800",
+                        message: "在水晶宫前许个愿吧！愿你的生活像公园的午后一样惬意~ 🚣‍♀️"
                     }
                 ]
             },
@@ -460,17 +480,43 @@
                 id: 'sevilla',
                 name: 'Sevilla',
                 icon: '💃',
-                // 修改：向下平移 y: 75 -> 86，x 微调至 32
                 x: 32, y: 86,
                 landmarks: [
                     {
                         id: 'plaza',
                         name: 'Plaza de España',
                         icon: '⛲',
-                        x: 50, y: 50,
+                        x: 60, y: 77, 
                         unlockDate: "2023-01-01T00:00:00",
                         image: "https://images.unsplash.com/photo-1559313162-0758436df85d?q=80&w=800",
                         message: "塞维利亚的阳光都不如你灿烂！愿你的每一天都像弗拉明戈一样热情似火！💃"
+                    },
+                    {
+                        id: 'cathedral',
+                        name: 'Seville Cathedral',
+                        icon: '⛪',
+                        x: 45, y: 52, 
+                        unlockDate: "2023-01-01T00:00:00",
+                        image: "https://images.unsplash.com/photo-1628799435882-6504be04245f?q=80&w=800",
+                        message: "哥伦布长眠于此，而我们的友谊将长存于心！⛪"
+                    },
+                    {
+                        id: 'flamenco_museum',
+                        name: 'Flamenco Museum',
+                        icon: '💃',
+                        x: 55, y: 42, 
+                        unlockDate: "2023-01-01T00:00:00",
+                        image: "https://images.unsplash.com/photo-1548698096-760773347b8d?q=80&w=800",
+                        message: "穿上舞鞋，一起跳舞吧！Ole! 💃"
+                    },
+                    {
+                        id: 'alcazar',
+                        name: 'Royal Alcázar',
+                        icon: '🕌',
+                        x: 50, y: 62, 
+                        unlockDate: "2023-01-01T00:00:00",
+                        image: "https://images.unsplash.com/photo-1621323385785-3e284a1e9c20?q=80&w=800",
+                        message: "权力的游戏拍摄地！你就是这里的女王！👸"
                     }
                 ]
             },
@@ -478,26 +524,73 @@
                 id: 'barcelona',
                 name: 'Barcelona',
                 icon: '🦎',
-                // 修改：向下平移 y: 30 -> 42，x 微调至 82
-                x: 82, y: 42,
+                // 修改：向左下方平移3% (x: 82->79, y: 42->45)
+                x: 79, y: 45,
                 landmarks: [
                     {
                         id: 'sagrada',
                         name: 'Sagrada Família',
                         icon: '⛪',
-                        x: 40, y: 40,
+                        // 修改：x: 68 -> 65 (向左平移3%)
+                        x: 65, y: 42, 
                         unlockDate: "2023-01-01T00:00:00",
                         image: "https://images.unsplash.com/photo-1583779457094-0068806775fb?q=80&w=800",
                         message: "高迪的曲线属于上帝，但我们的友谊直线连接！生日快乐！🎂"
                     },
                     {
-                        id: 'beach',
-                        name: 'Barceloneta Beach',
-                        icon: '🏖️',
-                        x: 70, y: 70,
-                        unlockDate: "2025-05-20T00:00:00", 
-                        image: "https://images.unsplash.com/photo-1512766572373-2c01d4b76999",
-                        message: "海风和啤酒都准备好啦！🍻"
+                        id: 'venetian_towers',
+                        name: 'Venetian Towers',
+                        icon: '🏛️',
+                        x: 38, y: 62, 
+                        unlockDate: "2023-01-01T00:00:00",
+                        image: "https://images.unsplash.com/photo-1558640302-3c467a3233d2?q=80&w=800",
+                        message: "通往魔法喷泉的大门为你敞开！✨"
+                    },
+                    {
+                        id: 'casa_batllo',
+                        name: 'Casa Batlló',
+                        icon: '🎭',
+                        x: 53, y: 37, 
+                        unlockDate: "2023-01-01T00:00:00",
+                        image: "https://images.unsplash.com/photo-1579603527263-54625b50d518?q=80&w=800",
+                        message: "就像巨龙的鳞片一样，你是如此独特和绚丽！🐲"
+                    },
+                    {
+                        id: 'sitges',
+                        name: 'Sitges',
+                        icon: '🌊',
+                        // 修改：y: 87 -> 90 (向下平移3%)
+                        x: 48, y: 90, 
+                        unlockDate: "2023-01-01T00:00:00",
+                        image: "https://images.unsplash.com/photo-1534002626242-2d14872c842b?q=80&w=800",
+                        message: "蓝色大海的传说，就在这里等你！🌊"
+                    },
+                    {
+                        id: 'pastisseria',
+                        name: 'Pastisseria',
+                        icon: '🍰',
+                        x: 58, y: 87, 
+                        unlockDate: "2023-01-01T00:00:00",
+                        image: "https://images.unsplash.com/photo-1551024601-564d6d6744f1?q=80&w=800",
+                        message: "生活再苦，有你也很甜！来块最好吃的蛋糕吧！🍰"
+                    },
+                    {
+                        id: 'boqueria',
+                        name: 'Boqueria Market',
+                        icon: '🍇',
+                        x: 58, y: 57, 
+                        unlockDate: "2023-01-01T00:00:00",
+                        image: "https://images.unsplash.com/photo-1535914616238-76672322a36b?q=80&w=800",
+                        message: "新鲜水果和火腿！吃货的天堂！🥓"
+                    },
+                    {
+                        id: 'columbus',
+                        name: 'Columbus Monument',
+                        icon: '⚓',
+                        x: 63, y: 72, 
+                        unlockDate: "2023-01-01T00:00:00",
+                        image: "https://images.unsplash.com/photo-1620755734262-d922c262c589?q=80&w=800",
+                        message: "指向新大陆，也指向我们无限可能的未来！👉"
                     }
                 ]
             }
@@ -533,7 +626,6 @@
             const mapContainer = document.getElementById('map-container');
             
             // 1. 统一清空 Canvas
-            // 因为现在所有视图都使用精美的背景图片，不再需要 Canvas 绘制的粗糙像素地形了
             bgCtx.clearRect(0, 0, w, h);
             
             // 2. 根据类型设置背景图片 URL
@@ -555,116 +647,6 @@
             } else {
                 mapContainer.style.backgroundImage = 'none';
             }
-        }
-
-        // 下面的辅助绘图函数 (addNoise, drawMadridGeo 等) 虽然保留在代码中，
-        // 但因为 drawMapBackground 不再调用它们，所以不会执行。
-        // 这样如果以后你想换回 Canvas 绘制也很方便。
-
-        function addNoise(ctx, width, height, density, color) {
-            ctx.fillStyle = color;
-            for(let i=0; i < (width * height * density); i++) {
-                const x = Math.random() * width;
-                const y = Math.random() * height;
-                ctx.fillRect(Math.floor(x), Math.floor(y), 1, 1);
-            }
-        }
-
-        // drawSpainGeo 函数暂时保留但未被调用，以防万一你想改回去
-
-        function drawMadridGeo(w, h) {
-            bgCtx.fillStyle = '#E0C8A0'; 
-            bgCtx.fillRect(0, 0, w, h);
-
-            bgCtx.fillStyle = '#D0B890'; 
-            bgCtx.beginPath();
-            bgCtx.arc(w/2, h/2, 30, 0, Math.PI*2);
-            bgCtx.fill();
-
-            bgCtx.fillStyle = '#C0A070';
-            bgCtx.beginPath();
-            bgCtx.arc(w/2, h/2, 10, 0, Math.PI*2);
-            bgCtx.fill();
-
-            bgCtx.strokeStyle = '#70A0C0';
-            bgCtx.lineWidth = 2;
-            bgCtx.beginPath();
-            bgCtx.moveTo(w/2 - 10, 0);
-            bgCtx.quadraticCurveTo(w/2 - 20, h/2, w/2 - 10, h);
-            bgCtx.stroke();
-
-            bgCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-            bgCtx.lineWidth = 1;
-            bgCtx.beginPath();
-            bgCtx.arc(w/2, h/2, 20, 0, Math.PI*2);
-            bgCtx.stroke();
-
-            addNoise(bgCtx, w, h, 0.1, 'rgba(160, 82, 45, 0.1)');
-        }
-
-        function drawSevillaGeo(w, h) {
-            bgCtx.fillStyle = '#D8E6C0'; 
-            bgCtx.fillRect(0, 0, w, h);
-
-            bgCtx.fillStyle = '#4B9CD3';
-            bgCtx.beginPath();
-            bgCtx.moveTo(40, 0);
-            bgCtx.bezierCurveTo(60, 40, 20, 80, 30, 128);
-            bgCtx.lineTo(45, 128); 
-            bgCtx.bezierCurveTo(35, 80, 75, 40, 55, 0);
-            bgCtx.fill();
-
-            bgCtx.fillStyle = '#E0C090';
-            bgCtx.beginPath();
-            bgCtx.ellipse(60, 60, 15, 25, 0.2, 0, Math.PI*2);
-            bgCtx.fill();
-
-            bgCtx.fillStyle = 'rgba(100, 128, 0, 0.05)';
-            for(let y=0; y<h; y+=16) {
-                bgCtx.fillRect(0, y, w, 1);
-            }
-        }
-
-        function drawBarcelonaGeo(w, h) {
-            bgCtx.fillStyle = '#4B9CD3';
-            bgCtx.fillRect(0, 0, w, h);
-
-            bgCtx.fillStyle = '#E0D0B0';
-            bgCtx.beginPath();
-            bgCtx.moveTo(0, 0);
-            bgCtx.lineTo(w, 0);
-            bgCtx.lineTo(0, h);
-            bgCtx.fill();
-
-            bgCtx.strokeStyle = '#F0E090'; 
-            bgCtx.lineWidth = 3;
-            bgCtx.beginPath();
-            bgCtx.moveTo(w, 0);
-            bgCtx.lineTo(0, h);
-            bgCtx.stroke();
-
-            bgCtx.fillStyle = '#D0A080'; 
-            bgCtx.beginPath();
-            bgCtx.moveTo(10, 10);
-            bgCtx.lineTo(w-20, 10);
-            bgCtx.lineTo(10, h-20);
-            bgCtx.fill();
-
-            bgCtx.fillStyle = 'rgba(139, 0, 0, 0.1)';
-            for(let x=10; x<w; x+=4) {
-                for(let y=10; y<h; y+=4) {
-                    if(x + y < w - 10) { 
-                        bgCtx.fillRect(x, y, 1, 1);
-                    }
-                }
-            }
-
-            bgCtx.fillStyle = '#8B9B70';
-            bgCtx.beginPath();
-            bgCtx.moveTo(0, 0);
-            bgCtx.lineTo(60, 0);
-            bgCtx.lineTo(0, 60);
-            bgCtx.fill();
         }
 
         function renderCountryMap() {
@@ -760,7 +742,6 @@
             // 使用更具体的ID获取元素，并添加了容错
             const titleEl = document.getElementById('modal-title-text');
             const wrapper = document.getElementById('spain-modal-img-wrapper');
-            // 注意：不再需要获取 imgEl，因为我们将在下面动态创建它
             const msgEl = document.getElementById('modal-message');
 
             if (titleEl) titleEl.innerText = landmark.name;
@@ -768,7 +749,6 @@
 
             if (wrapper) {
                 // 1. 关键修复：每次打开前彻底清空容器
-                // 这样可以清除之前的错误提示文字，或者旧的图片状态
                 wrapper.innerHTML = ''; 
                 
                 // 2. 动态创建一个全新的图片元素
@@ -796,8 +776,6 @@
                 
                 newImg.onerror = function() {
                     wrapper.classList.remove('loading');
-                    // 如果出错，用文字替换图片（这会导致图片元素消失，但没关系，
-                    // 因为下次打开时我们会执行 wrapper.innerHTML = '' 重置回来）
                     wrapper.innerHTML = '<span style="font-family:\'VT323\', monospace; font-size: 16px;">Image not found :(</span>';
                     wrapper.style.border = '2px solid #000';
                 };
@@ -820,7 +798,7 @@
         const canvas = document.getElementById('confetti-canvas');
         const ctx = canvas.getContext('2d');
         let confetti = [];
-        // 修复2: 增加动画状态标志位
+        // 增加动画状态标志位
         let isConfettiAnimating = false;
 
         function resizeCanvas() {
@@ -848,8 +826,7 @@
                 });
             }
 
-            // 修复3: 只有当动画未运行时，才启动循环
-            // 如果已经在运行，上面的 push 已经把新粒子加进去了，现有的循环会自动处理
+            // 只有当动画未运行时，才启动循环
             if (!isConfettiAnimating) {
                 isConfettiAnimating = true;
                 animateConfetti();
@@ -878,7 +855,7 @@
             if (confetti.length > 0) {
                 requestAnimationFrame(animateConfetti);
             } else {
-                // 修复4: 动画结束时，重置状态并隐藏 Canvas
+                // 动画结束时，重置状态并隐藏 Canvas
                 isConfettiAnimating = false;
                 canvas.style.display = 'none'; // 隐藏画布，把点击权还给地图
                 // 清空画布以防万一
